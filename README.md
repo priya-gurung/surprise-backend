@@ -108,20 +108,6 @@ Supported providers:
 - Supabase
 - Local PostgreSQL
 
-## Testing
-
-Run unit tests:
-
-```bash
-npm test
-```
-
-Run integration tests:
-
-```bash
-npm run test:integration
-```
-
 ## Deployment
 
 Recommended stack:
