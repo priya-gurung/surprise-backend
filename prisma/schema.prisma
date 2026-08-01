@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Wishlist {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  title        String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  items Item[]
+
+  @@map("wishlists")
+}
+
+model Item {
+  id         String    @id @default(uuid())
+  wishlistId String
+  wishlist   Wishlist  @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+
+  title      String
+  productUrl String
+  imageUrl   String?
+  notes      String?
+  priority   Priority  @default(MEDIUM)
+
+  reserved   Boolean   @default(false)
+  reservedBy String?
+  reservedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([wishlistId])
+  @@map("items")
+}
+
+// Simple persistent cache so we don't re-fetch & re-parse the same product
+// page's Open Graph metadata on every request. A background job or TTL
+// check can prune old rows; see backend/src/lib/linkPreview.js.
+model LinkPreviewCache {
+  id        String   @id @default(uuid())
+  url       String   @unique
+  imageUrl  String?
+  fetchedAt DateTime @default(now())
+
+  @@map("link_preview_cache")
+}
