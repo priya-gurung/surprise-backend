@@ -23,7 +23,7 @@ export function serializeItemForOwner(item) {
 }
 
 // Guests need to know what's already spoken for so they don't double-book.
-export function serializeItemForGuest(item) {
+export function serializeItemForGuest(item, currentGuestId = null) {
   return {
     id: item.id,
     title: item.title,
@@ -32,7 +32,7 @@ export function serializeItemForGuest(item) {
     notes: item.notes,
     priority: item.priority,
     reserved: item.reserved,
-    reservedBy: item.reserved ? item.reservedBy : null,
+    reservedByYou: item.reserved && item.reservedById === currentGuestId,
     createdAt: item.createdAt,
   }
 }

@@ -22,8 +22,25 @@ model Wishlist {
   updatedAt    DateTime @updatedAt
 
   items Item[]
+  guests Guest[]
 
   @@map("wishlists")
+}
+
+model Guest {
+  id           String   @id @default(uuid())
+  wishlistId   String
+  wishlist     Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  name         String   // normalized lowercase — used for uniqueness & login lookup
+  displayName  String   // original case — used for "Welcome back, Alice"
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  items Item[]
+
+  @@unique([wishlistId, name])   // case-insensitive uniqueness within a wishlist
+  @@index([wishlistId])
+  @@map("guests")
 }
 
 model Item {
@@ -38,8 +55,9 @@ model Item {
   priority   Priority  @default(MEDIUM)
 
   reserved   Boolean   @default(false)
-  reservedBy String?
-  reservedAt DateTime?
+  reservedById String? 
+  reservedBy   Guest?    @relation(fields: [reservedById], references: [id], onDelete: SetNull)
+  reservedAt   DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -13,6 +13,7 @@ const envSchema = z.object({
     .string()
     .default('false')
     .transform((v) => v === 'true'),
+  GUEST_COOKIE_NAME: z.string().default('guest_token'),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().default(300),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().default(20),

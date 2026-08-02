@@ -1,5 +1,5 @@
 import { env } from '../config/env.js'
-import { verifyOwnerToken } from '../lib/jwt.js'
+import { verifyGuestToken, verifyOwnerToken } from '../lib/jwt.js'
 import { AppError } from '../utils/AppError.js'
 
 /**
@@ -25,5 +25,28 @@ export function requireOwner(req, res, next) {
   }
 
   req.ownerWishlistId = payload.wishlistId
+  next()
+}
+
+export function requireGuest(req, res, next) {
+  console.log("requireGuest reached");
+  const token = req.cookies?.[env.GUEST_COOKIE_NAME]
+  console.log("cookies:", req.cookies);
+  if(!token) return next(AppError.unauthorized('Log in or register to do this'))
+  
+  let payload
+  try {
+    payload = verifyGuestToken(token)
+  } catch {
+    return next(AppError.unauthorized('Your session has expired. Please login again.'))
+  }
+
+  const codeParam = (req.params.code || '').toUpperCase()
+  if(payload.code !== codeParam){
+    return next(AppError.forbidden('This session does not belong to this wishlist.'))
+  }
+
+  req.guestId = payload.guestId
+  req.guestName = payload.name 
   next()
 }

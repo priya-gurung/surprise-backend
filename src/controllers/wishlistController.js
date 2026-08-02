@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma.js'
 import { hashPassword, verifyPassword } from '../lib/password.js'
-import { signOwnerToken, verifyOwnerToken } from '../lib/jwt.js'
+import { signOwnerToken, verifyGuestToken, verifyOwnerToken } from '../lib/jwt.js'
 import { generateCode } from '../utils/codeGenerator.js'
 import { AppError } from '../utils/AppError.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
@@ -71,30 +71,64 @@ export const ownerLogout = asyncHandler(async (req, res) => {
 export const getWishlist = asyncHandler(async (req, res) => {
   const { code } = req.params
 
+  console.log("Owner cookie:", req.cookies?.[env.COOKIE_NAME]);
+  console.log("Guest cookie:", req.cookies?.guest_token);
+
   const wishlist = await prisma.wishlist.findUnique({
     where: { code },
-    include: { items: { orderBy: { createdAt: 'asc' } } },
+    include: { items: { orderBy: { createdAt: 'asc' }, include: { reservedBy: true } } },
   })
   if (!wishlist) {
     throw AppError.notFound("Couldn't find a wishlist with that code.")
   }
 
   let isOwner = false
-  const token = req.cookies?.[env.COOKIE_NAME]
-  if (token) {
+  let guestId = null
+  let guestName = null
+
+  const ownerToken = req.cookies?.[env.COOKIE_NAME]
+  if (ownerToken) {
     try {
-      const payload = verifyOwnerToken(token)
+      const payload = verifyOwnerToken(ownerToken)
       isOwner = payload.code === wishlist.code
     } catch {
       isOwner = false
     }
   }
 
-  const items = wishlist.items.map(isOwner ? serializeItemForOwner : serializeItemForGuest)
+  if (!isOwner) {
+    const guestToken = req.cookies?.guest_token
+
+    if (guestToken) {
+      try {
+        const payload = verifyGuestToken(guestToken)
+        console.log("Guest payload:", payload);
+
+        if (payload.code === wishlist.code) {
+          guestId = payload.guestId
+          console.log("guestId =", guestId);
+          const guest = await prisma.guest.findUnique({
+            where: {
+              id: guestId,
+            },
+          });
+          guestName = guest?.displayName;
+        }
+      } catch(err) {
+        console.log(err);
+      }
+    }
+  }
+
+  const items = isOwner? 
+  wishlist.items.map(serializeItemForOwner)
+  : wishlist.items.map((item) => serializeItemForGuest(item, guestId) 
+  )
 
   res.status(200).json({
     wishlist: serializeWishlist(wishlist),
     items,
     isOwner,
+    guest: guestId ? { name: guestName, } : null,
   })
 })

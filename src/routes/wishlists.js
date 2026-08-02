@@ -1,7 +1,9 @@
 import { Router } from 'express'
 import { validate } from '../middleware/validate.js'
-import { requireOwner } from '../middleware/auth.js'
+import { requireGuest, requireOwner } from '../middleware/auth.js'
 import { authLimiter } from '../middleware/rateLimit.js'
+import { guestRegister, guestLogin, guestLogout } from '../controllers/guestController.js'
+import { guestAuthSchema } from '../validators/guestValidators.js'
 import {
   createWishlistSchema,
   ownerLoginSchema,
@@ -10,8 +12,6 @@ import {
 import {
   createItemSchema,
   updateItemSchema,
-  reserveItemSchema,
-  unreserveItemSchema,
   itemIdParamSchema,
 } from '../validators/itemValidators.js'
 import {
@@ -56,6 +56,11 @@ router.post(
 router.post('/wishlists/:code/logout', ownerLogout)
 router.get('/wishlists/:code', getWishlist)
 
+// Guest auth
+router.post('/wishlists/:code/guests/register', authLimiter, validate(guestAuthSchema), guestRegister)
+router.post('/wishlists/:code/guests/login', authLimiter, validate(guestAuthSchema), guestLogin)
+router.post('/wishlists/:code/guests/logout', guestLogout)
+
 router.post('/wishlists/:code/items', requireOwner, validate(createItemSchema), addItem)
 router.patch(
   '/wishlists/:code/items/:itemId',
@@ -79,15 +84,14 @@ router.post(
 
 router.post(
   '/wishlists/:code/items/:itemId/reserve',
+  requireGuest,
   validate(itemIdParamSchema, 'params'),
-  validate(reserveItemSchema),
   reserveItem,
 )
 router.post(
   '/wishlists/:code/items/:itemId/unreserve',
+  requireGuest,
   validate(itemIdParamSchema, 'params'),
-  validate(unreserveItemSchema),
   unreserveItem,
 )
-
 export default router

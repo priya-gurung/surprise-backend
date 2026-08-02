@@ -17,3 +17,24 @@ export function signOwnerToken(wishlist) {
 export function verifyOwnerToken(token) {
   return jwt.verify(token, env.JWT_SECRET)
 }
+
+export function signGuestToken(guest, wishlist){
+  return jwt.sign(
+    {
+      type: 'guest', 
+      guestId: guest.id,
+      wishlistId: wishlist.id,
+      code: wishlist.code,
+      name: guest.displayName,
+    }, 
+    env.JWT_SECRET, 
+    {
+    expiresIn: env.JWT_EXPIRES_IN,
+  })
+}
+
+export function verifyGuestToken(token) {
+  const payload = jwt.verify(token, env.JWT_SECRET)
+  if(payload.type !== 'guest') throw new Error('Not a guest token')
+  return payload
+}
