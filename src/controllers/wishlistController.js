@@ -87,11 +87,15 @@ export const getWishlist = asyncHandler(async (req, res) => {
   let guestName = null
 
   const ownerToken = req.cookies?.[env.COOKIE_NAME]
+  console.log("Owner cookie:", req.cookies?.[env.COOKIE_NAME]);
   if (ownerToken) {
     try {
       const payload = verifyOwnerToken(ownerToken)
+      console.log("Owner payload:", payload);
+      console.log("Wishlist code:", wishlist.code);
       isOwner = payload.code === wishlist.code
-    } catch {
+    } catch(err) {
+      console.log(err);
       isOwner = false
     }
   }
