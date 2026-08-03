@@ -6,14 +6,7 @@ import { AppError } from '../utils/AppError.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { serializeWishlist, serializeItemForOwner, serializeItemForGuest } from '../utils/serialize.js'
 import { env } from '../config/env.js'
-
-const cookieOptions = {
-  httpOnly: true,
-  secure: env.COOKIE_SECURE,
-  sameSite: env.COOKIE_SECURE ? 'none' : 'lax',
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: '/',
-}
+import { cookieOptions } from "../utils/cookieOptions.js";
 
 async function generateUniqueCode() {
   for (let attempt = 0; attempt < 5; attempt++) {
