@@ -64,9 +64,6 @@ export const ownerLogout = asyncHandler(async (req, res) => {
 export const getWishlist = asyncHandler(async (req, res) => {
   const { code } = req.params
 
-  console.log("Owner cookie:", req.cookies?.[env.COOKIE_NAME]);
-  console.log("Guest cookie:", req.cookies?.guest_token);
-
   const wishlist = await prisma.wishlist.findUnique({
     where: { code },
     include: { items: { orderBy: { createdAt: 'asc' }, include: { reservedBy: true } } },
@@ -80,12 +77,9 @@ export const getWishlist = asyncHandler(async (req, res) => {
   let guestName = null
 
   const ownerToken = req.cookies?.[env.COOKIE_NAME]
-  console.log("Owner cookie:", req.cookies?.[env.COOKIE_NAME]);
   if (ownerToken) {
     try {
       const payload = verifyOwnerToken(ownerToken)
-      console.log("Owner payload:", payload);
-      console.log("Wishlist code:", wishlist.code);
       isOwner = payload.code === wishlist.code
     } catch(err) {
       console.log(err);
@@ -99,11 +93,9 @@ export const getWishlist = asyncHandler(async (req, res) => {
     if (guestToken) {
       try {
         const payload = verifyGuestToken(guestToken)
-        console.log("Guest payload:", payload);
 
         if (payload.code === wishlist.code) {
           guestId = payload.guestId
-          console.log("guestId =", guestId);
           const guest = await prisma.guest.findUnique({
             where: {
               id: guestId,
