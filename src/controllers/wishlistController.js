@@ -54,7 +54,13 @@ export const ownerLogin = asyncHandler(async (req, res) => {
 })
 
 export const ownerLogout = asyncHandler(async (req, res) => {
-  res.clearCookie(env.COOKIE_NAME, { path: '/' })
+  const isProduction = process.env.NODE_ENV === 'production'
+  res.clearCookie(env.COOKIE_NAME, {
+    path: '/',
+    httpOnly: true,
+    sameSite: isProduction ? 'none' : 'lax',
+    secure: isProduction,
+  })
   res.status(204).send()
 })
 
