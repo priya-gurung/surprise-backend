@@ -30,7 +30,7 @@ export const createWishlist = asyncHandler(async (req, res) => {
   const token = signOwnerToken(wishlist)
   res.cookie(env.COOKIE_NAME, token, cookieOptions)
 
-  res.status(201).json({ wishlist: serializeWishlist(wishlist), items: [] })
+  res.status(201).json({ wishlist: serializeWishlist(wishlist), items: [], token })
 })
 
 export const ownerLogin = asyncHandler(async (req, res) => {
@@ -50,7 +50,7 @@ export const ownerLogin = asyncHandler(async (req, res) => {
   const token = signOwnerToken(wishlist)
   res.cookie(env.COOKIE_NAME, token, cookieOptions)
 
-  res.status(200).json({ wishlist: serializeWishlist(wishlist) })
+  res.status(200).json({ wishlist: serializeWishlist(wishlist), token })
 })
 
 export const ownerLogout = asyncHandler(async (req, res) => {
@@ -82,7 +82,15 @@ export const getWishlist = asyncHandler(async (req, res) => {
   let guestId = null
   let guestName = null
 
-  const ownerToken = req.cookies?.[env.COOKIE_NAME]
+  //mobile fallback
+  const authHeader = req.headers.authorization
+  let ownerToken = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null
+
+  //Fall back to Cookie (Desktop)
+  if (!ownerToken) {
+    ownerToken = req.cookies?.[env.COOKIE_NAME]
+  }
+
   if (ownerToken) {
     try {
       const payload = verifyOwnerToken(ownerToken)
@@ -94,8 +102,14 @@ export const getWishlist = asyncHandler(async (req, res) => {
   }
 
   if (!isOwner) {
-    const guestToken = req.cookies?.guest_token
+  // 1. Check for Guest Bearer / custom header first (Mobile fallback)
+  const guestHeader = req.headers['x-guest-token'] || 
+                     (req.headers.authorization?.startsWith('Guest ') 
+                        ? req.headers.authorization.split(' ')[1] 
+                        : null)
 
+  // 2. Fall back to cookie (Desktop)
+  const guestToken = guestHeader || req.cookies?.guest_token
     if (guestToken) {
       try {
         const payload = verifyGuestToken(guestToken)

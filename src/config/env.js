@@ -42,4 +42,9 @@ export const env = parsed.success
     })
 
 // origins allowed to send credentialed requests
-export const corsOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim())
+const configuredOrigins = env.CORS_ORIGIN.split(',').map((o) => o.trim());
+
+// In development, automatically allow local network IPs like 172.20.10.5
+export const corsOrigins = env.NODE_ENV === 'development'
+  ? Array.from(new Set([...configuredOrigins, 'http://localhost:5173', 'http://127.0.0.1:5173', 'http://172.20.10.5:5173']))
+  : configuredOrigins;

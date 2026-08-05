@@ -14,17 +14,32 @@ export function createApp() {
 
   app.set('trust proxy', 1) // needed for correct rate-limiting/secure cookies behind Render's proxy
 
-  app.use(helmet())
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+  }))
+
   app.use(
     cors({
       origin(origin, callback) {
-        // allow same-origin/non-browser requests (no Origin header) through
-        if (!origin || corsOrigins.includes(origin)) return callback(null, true)
-        callback(new Error('Not allowed by CORS'))
+        // Allow non-browser requests (Postman, curl, same-origin)
+        if (!origin) return callback(null, true);
+
+        // Normalize origin by stripping any trailing slashes
+        const normalizedOrigin = origin.replace(/\/$/, '');
+        const normalizedAllowed = corsOrigins.map((o) => o.replace(/\/$/, ''));
+
+        if (normalizedAllowed.includes(normalizedOrigin)) {
+          return callback(null, true);
+        }
+
+        // Log the rejected origin so you can inspect it in your terminal
+        console.error(`[CORS Blocked] Incoming Origin: "${origin}"`);
+        return callback(new Error(`Not allowed by CORS: ${origin}`));
       },
       credentials: true,
     }),
-  )
+  );
+
   app.use(express.json({ limit: '100kb' }))
   app.use(cookieParser())
   if (env.NODE_ENV !== 'test') {

@@ -50,16 +50,7 @@ export const guestRegister = async (req, res) => {
             },
         });
 
-        const token = jwt.sign(
-            {
-                guestId: guest.id,
-                wishlistId: wishlist.id,
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "7d",
-            }
-        );
+        const token = signGuestToken(guest, wishlist);
 
         res.cookie("guest_token", token, cookieOptions);
 
@@ -69,6 +60,7 @@ export const guestRegister = async (req, res) => {
                 id: guest.id,
                 name: guest.displayName,
             },
+            token,
         });
     } catch (err) {
         console.error(err);
@@ -131,6 +123,7 @@ export const guestLogin = async (req, res) => {
                 id: guest.id,
                 name: guest.displayName,
             },
+            token,
         });
     } catch (err) {
         console.error(err);

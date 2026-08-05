@@ -7,7 +7,15 @@ import { AppError } from '../utils/AppError.js'
  * code matches req.params.code. Attaches req.ownerWishlistId on success.
  */
 export function requireOwner(req, res, next) {
-  const token = req.cookies?.[env.COOKIE_NAME]
+  //check for bearer token
+  const authHeader = req.headers.authorization
+  let token = authHeader?.startsWith('Bearer ') ? authHeader.split(' ')[1] : null
+
+  //Fall back to Cookie (Desktop)
+  if (!token) {
+    token = req.cookies?.[env.COOKIE_NAME]
+  }
+
   if (!token) {
     return next(AppError.unauthorized('Log in as the wishlist owner to do this.'))
   }
@@ -29,9 +37,13 @@ export function requireOwner(req, res, next) {
 }
 
 export function requireGuest(req, res, next) {
-  console.log("requireGuest reached");
-  const token = req.cookies?.[env.GUEST_COOKIE_NAME]
-  console.log("cookies:", req.cookies);
+  const guestHeader = req.headers['x-guest-token'] || 
+                     (req.headers.authorization?.startsWith('Guest ') 
+                        ? req.headers.authorization.split(' ')[1] 
+                        : null)
+  const token = guestHeader || req.cookies?.[env.GUEST_COOKIE_NAME]
+  console.log("Token retrieved:", token ? "Present" : "Missing");
+  
   if(!token) return next(AppError.unauthorized('Log in or register to do this'))
   
   let payload
